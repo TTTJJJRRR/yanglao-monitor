@@ -1,0 +1,13 @@
+{
+  "name": "cursor-orchestrator",
+  "version": "1.0.0",
+  "description": "WorkBuddy 指挥 Cursor AI Agent 的编排脚本",
+  "type": "module",
+  "scripts": {
+    "run": "node orchestrator.js",
+    "status": "node orchestrator.js --status"
+  },
+  "dependencies": {
+    "@cursor/sdk": "latest"
+  }
+}
