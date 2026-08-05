@@ -44,3 +44,8 @@ cursor-orchestrator/.env
 
 # ===== WorkBuddy 内部数据 =====
 .workbuddy/
+
+# ===== 第三方工具箱 / 训练产物（不入库） =====
+vendor/
+backend/app/inference/mmwave_cnn/weights.pt
+backend/.venv-cnn/
