@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { login, setToken, getToken, getDataSource, setDataSource } from './api/client'
 import { createWs } from './api/ws'
-import type { AlertData, BehaviorData, StreamMessage, VitalData } from './types'
+import type { AlertData, BehaviorData, RadarStatusData, PoseData, StreamMessage, VitalData } from './types'
 
 const emotionMap = {
   happy: '愉快',
@@ -20,6 +20,15 @@ const sourceLabel: Record<SourceType, string> = {
   real: '真实雷达(占位)',
 }
 
+const behaviorMap = {
+  walking: '行走',
+  sitting: '坐下',
+  lying: '躺下',
+  crouching: '弯腰',
+  falling: '跌倒',
+  still: '静止',
+} as const
+
 type Theme = 'light' | 'dark'
 
 export default function App() {
@@ -28,6 +37,8 @@ export default function App() {
   const [vitals, setVitals] = useState<VitalData[]>([])
   const [behaviors, setBehaviors] = useState<BehaviorData[]>([])
   const [alerts, setAlerts] = useState<AlertData[]>([])
+  const [radarStatus, setRadarStatus] = useState<RadarStatusData>({ action: null, confidence: 0, model_loaded: false })
+  const [pose, setPose] = useState<PoseData>({ fall_score: 0, confidence: 0 })
   const [username, setUsername] = useState('admin')
   const [password, setPassword] = useState('admin123')
   const [dataSource, setDataSourceState] = useState<SourceType>('mock')
@@ -70,6 +81,8 @@ export default function App() {
         if (msg.type === 'vital') setVitals((prev) => [msg.data, ...prev].slice(0, 30))
         if (msg.type === 'behavior') setBehaviors((prev) => [msg.data, ...prev].slice(0, 10))
         if (msg.type === 'alert') setAlerts((prev) => [msg.data, ...prev].slice(0, 20))
+        if (msg.type === 'radar_status') setRadarStatus(msg.data)
+        if (msg.type === 'pose') setPose(msg.data)
       },
       setOnline,
     )
@@ -153,7 +166,36 @@ export default function App() {
             <p className="mt-3 text-center text-xs text-slate-400">默认账号 admin / admin123</p>
           </div>
         ) : (
-          <div className="grid gap-4 lg:grid-cols-3">
+          <>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900/70">
+              <div className="mb-3 text-sm font-semibold text-slate-600 dark:text-slate-300">活动识别（融合状态）</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-950">
+                  <div className="text-xs text-slate-400">雷达行为</div>
+                  <div className="mt-1 text-xl font-bold text-sky-700 dark:text-sky-300">
+                    {radarStatus.action ? behaviorMap[radarStatus.action] : '等待雷达信号'}
+                    {radarStatus.action && (
+                      <span className="ml-2 text-xs font-normal text-slate-400">置信 {Math.round(radarStatus.confidence * 100)}%</span>
+                    )}
+                  </div>
+                  <div className={`mt-1 text-xs ${radarStatus.model_loaded ? 'text-emerald-500' : 'text-slate-400'}`}>
+                    {radarStatus.model_loaded ? '模型已接入（真实推理）' : '模型未接入（空挡接口）'}
+                  </div>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-950">
+                  <div className="text-xs text-slate-400">视觉跌倒分</div>
+                  <div className="mt-1 text-xl font-bold text-rose-600 dark:text-rose-400">
+                    {Math.round(pose.fall_score * 100)}%
+                    {pose.fall_score > 0 && (
+                      <span className="ml-2 text-xs font-normal text-slate-400">置信 {Math.round(pose.confidence * 100)}%</span>
+                    )}
+                  </div>
+                  <div className="mt-1 text-xs text-slate-400">MediaPipe 关键点实时计算</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-3">
             <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900/70">
               <Stat title="呼吸率" value={lastVital?.breath_rate ?? '--'} unit="次/分" />
               <Stat title="心率" value={lastVital?.heart_rate ?? '--'} unit="次/分" />
@@ -182,6 +224,7 @@ export default function App() {
               )}
             </section>
           </div>
+          </>
         )}
       </div>
     </div>

@@ -87,6 +87,22 @@ async def lifespan(app: FastAPI):
         seed_admin(db)
     finally:
         db.close()
+
+    # 雷达行为 CNN 即插即用注册：
+    # 权重(weights.pt)存在且环境有 numpy/torch 时注册真实模型，
+    # 否则保持空挡 Stub（/api/edge/radar-frame 返回 503，不伪造）。
+    # Cursor 训练完把 weights.pt 放入 backend/app/inference/mmwave_cnn/ 即自动接入，零改代码。
+    try:
+        from .inference.behavior_classifier import register_classifier
+        from .inference.mmwave_cnn.classifier import MmWaveBehaviorCNN
+
+        register_classifier(MmWaveBehaviorCNN())
+        print("[启动] 雷达行为 CNN 已接入（真实权重已加载）")
+    except FileNotFoundError:
+        print("[启动] 雷达行为 CNN 未接入：weights.pt 缺失，保持空挡接口（Cursor 训练后放入即生效）")
+    except Exception as e:  # noqa: BLE001 - 后端无 numpy/torch 属正常，权重由 Cursor 环境加载
+        print(f"[启动] 雷达行为 CNN 未接入：{type(e).__name__}（后端未装 numpy/torch，属正常；权重由 Cursor 环境加载）")
+
     task = asyncio.create_task(mock_stream())
     yield
     task.cancel()

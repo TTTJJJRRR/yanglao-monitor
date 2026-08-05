@@ -28,7 +28,20 @@ export type AlertData = {
   is_handled: boolean
 }
 
+export type RadarStatusData = {
+  action: 'walking' | 'sitting' | 'lying' | 'crouching' | 'falling' | 'still' | null
+  confidence: number
+  model_loaded: boolean
+}
+
+export type PoseData = {
+  fall_score: number
+  confidence: number
+}
+
 export type StreamMessage =
   | { type: 'vital'; data: VitalData }
   | { type: 'behavior'; data: BehaviorData }
   | { type: 'alert'; data: AlertData }
+  | { type: 'radar_status'; data: RadarStatusData }
+  | { type: 'pose'; data: PoseData }

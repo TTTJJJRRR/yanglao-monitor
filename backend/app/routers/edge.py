@@ -20,6 +20,7 @@ from ..inference.behavior_classifier import (
     RadarFrame,
     get_classifier,
     ModelNotLoadedError,
+    StubBehaviorClassifier,
 )
 from ..models import BehaviorAction, EmotionLabel
 from ..ws import save_and_build_message
@@ -70,6 +71,23 @@ async def _sync_and_decide() -> dict:
         }
         behavior_msg = save_and_build_message(db, behavior_payload, "behavior")
         await broadcast(behavior_msg)
+
+        # 广播雷达/视觉实时状态，供前端大屏显示（即使未触发报警也持续更新）
+        await broadcast({
+            "type": "radar_status",
+            "data": {
+                "action": _state["radar_action"],
+                "confidence": round(_state["radar_conf"], 3),
+                "model_loaded": not isinstance(get_classifier(), StubBehaviorClassifier),
+            },
+        })
+        await broadcast({
+            "type": "pose",
+            "data": {
+                "fall_score": round(_state["vision_fall_score"], 3),
+                "confidence": round(_state["vision_conf"], 3),
+            },
+        })
 
         if decision["alert_level"]:
             alert_payload = {

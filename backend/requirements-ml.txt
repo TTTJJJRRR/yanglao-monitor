@@ -1,0 +1,24 @@
+# M2/M3 真实模型与边缘侧依赖清单
+# 本仓库 M0 沙箱（backend313 venv）刻意不含这些包，全部以纯 Python stdlib 实现可测；
+# 真正的 CNN 训练 / 边缘推理 / 视觉姿态交给 Cursor 或边缘设备环境安装。
+#
+# 安装（在具备 numpy/torch 的环境中）：
+#   pip install -r backend/requirements-ml.txt
+
+# 雷达行为 CNN（MMFi 27 类，接 BehaviorClassifier；权重 weights.pt 由 Cursor 训练产出后自动接入）
+torch>=2.1.0
+
+# 点云 -> 体素网格预处理（纯 torch 亦可，但 numpy 更顺手）
+numpy>=1.24.0
+
+# 可选：信号滤波 / 频谱（若把 mmVital 纯 Python 估计器换成 scipy 实现）
+scipy>=1.11.0
+
+# 边缘视觉：MediaPipe Pose 取 33 关键点 -> fall_score（纯几何，无训练）
+mediapipe>=0.10.0
+
+# 边缘视觉节点把 fall_score POST 到后端 /api/edge/pose
+requests>=2.31.0
+
+# 可选：若改用 TI 官方 mmVital-Signs 库替换纯 Python 估计器（见其官方安装指引）
+# mmvital_signs
