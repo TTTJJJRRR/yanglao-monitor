@@ -10,13 +10,18 @@
 """
 import time
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from ..bus import broadcast
 from ..database import SessionLocal
 from ..inference.fall_fusion import fuse
-from ..models import EmotionLabel
+from ..inference.behavior_classifier import (
+    RadarFrame,
+    get_classifier,
+    ModelNotLoadedError,
+)
+from ..models import BehaviorAction, EmotionLabel
 from ..ws import save_and_build_message
 
 router = APIRouter(tags=["edge"])
@@ -85,8 +90,40 @@ async def _sync_and_decide() -> dict:
 
 @router.post("/edge/behavior")
 async def post_radar_behavior(body: RadarBehavior):
+    # 生产环境：body.action / confidence 应由边缘节点的 BehaviorClassifier 实现
+    # （见 app.inference.behavior_classifier）对雷达信号推理得出，而非手敲。
     _state["radar_action"] = body.action
     _state["radar_conf"] = body.confidence
+    decision = await _sync_and_decide()
+    return {"ok": True, "decision": decision}
+
+
+class RadarFrameIn(BaseModel):
+    device_id: str = "RADAR_01"
+    timestamp_ms: int = 0
+    signature: list | None = None  # 真实模型输入张量（点云/微多普勒），当前留空
+
+
+@router.post("/edge/radar-frame")
+async def post_radar_frame(body: RadarFrameIn):
+    """雷达信号 → 行为 的模型接入点（空挡接口）。
+
+    边缘节点把一帧雷达信号（点云/微多普勒）发来，由已注册的
+    BehaviorClassifier 推理出行为。模型未接入时显式返回 503，
+    不伪造检测结果。模型就绪后无需改此端点，只 register_classifier 即可。
+    """
+    classifier = get_classifier()
+    frame = RadarFrame(
+        device_id=body.device_id,
+        timestamp_ms=body.timestamp_ms or _now_ms(),
+        signature=body.signature,
+    )
+    try:
+        pred = classifier.classify(frame)
+    except ModelNotLoadedError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    _state["radar_action"] = pred.action.value
+    _state["radar_conf"] = pred.confidence
     decision = await _sync_and_decide()
     return {"ok": True, "decision": decision}
 
