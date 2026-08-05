@@ -1,11 +1,18 @@
 import type { StreamMessage } from '../types'
 
-export function createWs(token: string, onMessage: (msg: StreamMessage) => void, onStatus: (online: boolean) => void) {
+export function createWs(
+  token: string,
+  onMessage: (msg: StreamMessage) => void,
+  onStatus: (online: boolean) => void,
+  source?: string,
+) {
   let ws: WebSocket | null = null
   let closed = false
 
   const connect = () => {
-    ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws?token=${token}`)
+    const params = new URLSearchParams({ token })
+    if (source) params.set('source', source)
+    ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/stream?${params}`)
     ws.onopen = () => onStatus(true)
     ws.onclose = () => {
       onStatus(false)

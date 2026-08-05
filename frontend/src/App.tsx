@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { login, setToken, getToken, getDataSource, setDataSource } from './api/client'
 import { createWs } from './api/ws'
-import type { AlertData, BehaviorData, RadarStatusData, PoseData, StreamMessage, VitalData } from './types'
+import type { AlertData, BehaviorAction, BehaviorData, RadarStatusData, PoseData, StreamMessage, VitalData } from './types'
 
 const emotionMap = {
   happy: '愉快',
@@ -20,14 +20,14 @@ const sourceLabel: Record<SourceType, string> = {
   real: '真实雷达(占位)',
 }
 
-const behaviorMap = {
+const behaviorMap: Record<BehaviorAction, string> = {
   walking: '行走',
-  sitting: '坐下',
-  lying: '躺下',
-  crouching: '弯腰',
   falling: '跌倒',
-  still: '静止',
-} as const
+  sitting_still: '坐着不动',
+  standing_up: '起身',
+  lying: '躺下',
+  normal_activity: '正常活动',
+}
 
 type Theme = 'light' | 'dark'
 
@@ -85,8 +85,9 @@ export default function App() {
         if (msg.type === 'pose') setPose(msg.data)
       },
       setOnline,
+      dataSource,
     )
-  }, [token])
+  }, [token, dataSource])
 
   const lastVital = vitals[0]
 
@@ -98,6 +99,8 @@ export default function App() {
         .map((v) => ({ t: new Date(v.timestamp_ms).toLocaleTimeString(), breath: v.breath_rate, heart: v.heart_rate })),
     [vitals],
   )
+
+  const latestBehaviorLabel = behaviors[0]?.action ? behaviorMap[behaviors[0].action] : '等待数据'
 
   async function handleLogin() {
     setLoginError('')
@@ -203,7 +206,10 @@ export default function App() {
             </section>
             <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900/70">
               <div className="rounded-xl bg-slate-50 p-4 text-slate-700 dark:bg-slate-950 dark:text-slate-200">
-                最新行为: {behaviors[0]?.action ?? '等待数据'} {behaviors[0] && emotionMap[behaviors[0].emotion]}
+                <span className={behaviors[0]?.action === 'falling' ? 'font-bold text-rose-600' : ''}>
+                  最新行为: {latestBehaviorLabel}
+                </span>{' '}
+                {behaviors[0] && emotionMap[behaviors[0].emotion]}
               </div>
               <RadarCanvas vital={lastVital} />
             </section>

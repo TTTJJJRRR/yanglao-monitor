@@ -10,13 +10,15 @@ export type VitalData = {
   source?: 'mock' | 'real' | 'mmfi'
 }
 
+export type BehaviorAction = 'walking' | 'falling' | 'sitting_still' | 'standing_up' | 'lying' | 'normal_activity'
+
 export type BehaviorData = {
   id?: number
   timestamp_ms: number
-  action: 'walking' | 'sitting' | 'lying' | 'crouching' | 'falling' | 'still'
+  action: BehaviorAction
   emotion: 'happy' | 'sad' | 'angry' | 'anxious' | 'calm' | 'surprised'
   confidence: number
-  source?: 'mock' | 'real'
+  source?: 'mock' | 'real' | 'mmfi'
 }
 
 export type AlertData = {
@@ -29,7 +31,7 @@ export type AlertData = {
 }
 
 export type RadarStatusData = {
-  action: 'walking' | 'sitting' | 'lying' | 'crouching' | 'falling' | 'still' | null
+  action: BehaviorAction | null
   confidence: number
   model_loaded: boolean
 }

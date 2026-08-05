@@ -15,15 +15,16 @@ class UserRole(str, Enum):
 class VitalSource(str, Enum):
     mock = "mock"
     real = "real"
+    mmfi = "mmfi"
 
 
 class BehaviorAction(str, Enum):
-    walking = "walking"          # 行走
-    sitting = "sitting"           # 坐下
-    lying = "lying"               # 躺下
-    crouching = "crouching"       # 弯腰
-    falling = "falling"           # 跌倒
-    still = "still"               # 静止
+    walking = "walking"
+    falling = "falling"
+    sitting_still = "sitting_still"
+    standing_up = "standing_up"
+    lying = "lying"
+    normal_activity = "normal_activity"
 
 
 class EmotionLabel(str, Enum):
@@ -56,9 +57,9 @@ class VitalRecord(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     device_id: Mapped[str] = mapped_column(String(64), nullable=False)
     timestamp_ms: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
-    breath_rate: Mapped[float] = mapped_column(Float, nullable=False)
-    heart_rate: Mapped[float] = mapped_column(Float, nullable=False)
-    chest_displacement_mm: Mapped[float] = mapped_column(Float, nullable=False)
+    breath_rate: Mapped[float | None] = mapped_column(Float, nullable=True)
+    heart_rate: Mapped[float | None] = mapped_column(Float, nullable=True)
+    chest_displacement_mm: Mapped[float | None] = mapped_column(Float, nullable=True)
     motion_flag: Mapped[bool] = mapped_column(Boolean, nullable=False)
     ahi_index: Mapped[float | None] = mapped_column(Float, nullable=True)
     source: Mapped[VitalSource] = mapped_column(SAEnum(VitalSource), nullable=False)

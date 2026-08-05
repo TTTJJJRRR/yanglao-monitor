@@ -5,7 +5,7 @@ from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from .bus import clients, broadcast
+from .bus import broadcast, clients, register_client, unregister_client
 from .config import get_settings
 from .database import Base, engine, SessionLocal
 from .mock import generate_alert, generate_behavior, generate_vital
@@ -16,7 +16,7 @@ from .routers.behaviors import router as behaviors_router
 from .routers.edge import router as edge_router
 from .routers.vitals import router as vitals_router
 from .ws import websocket_endpoint
-from .data_source import get_source, set_source, next_mmfi_messages, next_real_vital, available_sources
+from .data_source import AVAILABLE, available_sources, get_source, next_mmfi_messages, next_real_vital, set_source
 
 settings = get_settings()
 
@@ -32,7 +32,7 @@ async def mock_stream() -> None:
     while True:
         if get_source() == "mmfi":
             for msg in next_mmfi_messages():
-                await broadcast(msg)
+                await broadcast(msg, source="mmfi")
             await asyncio.sleep(1)
             continue
 
@@ -45,7 +45,7 @@ async def mock_stream() -> None:
                     db.add(record)
                     db.commit()
                     db.refresh(record)
-                    await broadcast({"type": "vital", "data": {**vital, "id": record.id}})
+                    await broadcast({"type": "vital", "data": {**vital, "id": record.id}}, source="real")
                 finally:
                     db.close()
             await asyncio.sleep(1)
@@ -58,7 +58,7 @@ async def mock_stream() -> None:
             db.add(vital_record)
             db.commit()
             db.refresh(vital_record)
-            await broadcast({"type": "vital", "data": {**vital, "id": vital_record.id}})
+            await broadcast({"type": "vital", "data": {**vital, "id": vital_record.id}}, source="mock")
 
             if int(vital_record.timestamp_ms) % 5 == 0:
                 behavior = generate_behavior()
@@ -117,19 +117,31 @@ app.include_router(alerts_router, prefix=settings.api_prefix)
 app.include_router(edge_router, prefix=settings.api_prefix)
 
 
-@app.websocket("/ws")
-async def ws(websocket: WebSocket):
+async def _accept_stream(websocket: WebSocket, requested_source: str | None = None) -> None:
     token = websocket.query_params.get("token")
     if not token:
         await websocket.close(code=1008)
         return
-    clients.add(websocket)
+    if requested_source is not None and requested_source not in AVAILABLE:
+        await websocket.close(code=1008, reason="invalid source")
+        return
+    register_client(websocket, requested_source)
     await websocket.accept()
     try:
         while True:
             await websocket.receive_text()
     except Exception:
-        clients.discard(websocket)
+        unregister_client(websocket)
+
+
+@app.websocket("/ws")
+async def ws(websocket: WebSocket):
+    await _accept_stream(websocket, websocket.query_params.get("source"))
+
+
+@app.websocket("/ws/stream")
+async def ws_stream(websocket: WebSocket):
+    await _accept_stream(websocket, websocket.query_params.get("source"))
 
 
 @app.post("/api/simulate/fall")

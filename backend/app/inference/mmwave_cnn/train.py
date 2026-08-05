@@ -28,8 +28,26 @@ from .classifier import MMFI_ACTIONS
 class MMFiMMWaveDataset(Dataset):
     def __init__(self, root: str, grid: int = 32, t_frames: int = 32):
         self.samples: list[tuple[list[np.ndarray], int]] = []
-        for mm in glob.glob(os.path.join(root, "E*", "S*", "A*", "mmwave")):
+        patterns = [
+            os.path.join(root, "E*", "S*", "A*", "mmwave"),
+            os.path.join(root, "S*", "A*", "mmwave"),
+            os.path.join(root, "A*", "mmwave"),
+        ]
+        if os.path.basename(os.path.normpath(root)).lower() == "mmwave":
+            mmwave_dirs = [root]
+        elif os.path.isdir(os.path.join(root, "mmwave")):
+            mmwave_dirs = [os.path.join(root, "mmwave")]
+        else:
+            mmwave_dirs = sorted({mm for pattern in patterns for mm in glob.glob(pattern)})
+        for mm in mmwave_dirs:
             act = os.path.basename(os.path.dirname(mm))  # "Axx"
+            if act not in MMFI_ACTIONS:
+                metadata_action = os.path.join(os.path.dirname(mm), "meta_project.json")
+                if os.path.exists(metadata_action):
+                    import json
+
+                    with open(metadata_action, "r", encoding="utf-8") as f:
+                        act = str(json.load(f).get("action", ""))
             if act not in MMFI_ACTIONS:
                 continue
             label = MMFI_ACTIONS.index(act)
@@ -56,15 +74,23 @@ def main() -> None:
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--out", default=os.path.join(os.path.dirname(__file__), "weights.pt"))
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    ap.add_argument("--num-classes", type=int, default=len(MMFI_ACTIONS), help="输出头类别数，MMFi 默认 27")
     args = ap.parse_args()
 
+    torch.manual_seed(7)
+    np.random.seed(7)
     ds = MMFiMMWaveDataset(args.dataset_root)
-    print(f"[train] loaded {len(ds)} mmwave samples across {len(MMFI_ACTIONS)} classes")
+    labels = sorted({label for _, label in ds.samples})
+    print(f"[train] loaded {len(ds)} mmwave samples across {len(labels)} observed classes")
+    if len(labels) < 2:
+        print("[train] warning: fewer than 2 observed classes; accuracy is not meaningful")
     if len(ds) == 0:
         raise SystemExit("未找到 mmwave 样本，请确认 dataset_root 下存在 E*/S*/A*/mmwave/frame*.bin")
     dl = DataLoader(ds, batch_size=args.batch_size, shuffle=True, num_workers=0)
 
-    model = MmWaveCNN(num_classes=len(MMFI_ACTIONS)).to(args.device)
+    if args.num_classes != len(MMFI_ACTIONS):
+        raise SystemExit("当前 classifier 固定使用 MMFi A01..A27 映射，--num-classes 必须保持 27")
+    model = MmWaveCNN(num_classes=args.num_classes).to(args.device)
     opt = torch.optim.Adam(model.parameters(), lr=args.lr)
     crit = nn.CrossEntropyLoss()
     model.train()

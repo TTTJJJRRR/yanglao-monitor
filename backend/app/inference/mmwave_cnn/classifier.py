@@ -12,7 +12,7 @@ from __future__ import annotations
 import os
 
 from ..behavior_classifier import BehaviorClassifier, BehaviorPrediction, RadarFrame
-from ..models import BehaviorAction
+from ...models import BehaviorAction
 from .preprocess import load_mmwave_frames, preprocess_sequence
 
 DEFAULT_WEIGHTS = os.path.join(os.path.dirname(__file__), "weights.pt")
@@ -26,10 +26,10 @@ MMFI_ACTIONS = [
 # MMFi 动作 -> 本项目 BehaviorAction 的部分映射（项目不止跌倒，仅映射相关子集）
 # falling 不在 MMFi 中，需 M1 硬件/专用跌倒集补充。
 MMFI_TO_BEHAVIOR = {
-    "A06": BehaviorAction.walking,    # 原地踏步 -> walking
-    "A12": BehaviorAction.crouching,  # 深蹲 -> crouching
-    "A19": BehaviorAction.crouching,  # 拾物 -> crouching
-    "A27": BehaviorAction.crouching,  # 鞠躬 -> crouching（弯腰）
+    "A06": BehaviorAction.walking,         # 原地踏步 -> walking
+    "A12": BehaviorAction.sitting_still,   # 低动作样本先映射为静态类
+    "A19": BehaviorAction.sitting_still,   # 拾物 -> 静态/低速动作
+    "A27": BehaviorAction.normal_activity, # 鞠躬 -> normal_activity
 }
 
 
@@ -53,16 +53,19 @@ class MmWaveBehaviorCNN(BehaviorClassifier):
         sig = frame.signature
         if isinstance(sig, str) and os.path.isdir(sig):
             frames = load_mmwave_frames(sig)
+            tensor = preprocess_sequence(frames)
         elif isinstance(sig, (list, tuple)):
-            frames = list(sig)
+            tensor = preprocess_sequence(list(sig))
+        elif hasattr(sig, "shape") and len(sig.shape) == 4:
+            tensor = sig
         else:
-            raise ValueError("signature 需为 mmwave 目录路径或点云序列 list[(N,3)]")
+            raise ValueError("signature 需为 mmwave 目录路径、点云序列或预处理张量")
 
-        tensor = preprocess_sequence(frames)
         with torch.no_grad():
-            logits = self.model(torch.from_numpy(tensor).unsqueeze(0).to(self.device))
+            input_tensor = torch.from_numpy(tensor).float().unsqueeze(0).to(self.device)
+            logits = self.model(input_tensor)
             probs = torch.softmax(logits, dim=1)[0]
             idx = int(probs.argmax())
             conf = float(probs[idx])
-        action = MMFI_TO_BEHAVIOR.get(MMFI_ACTIONS[idx], BehaviorAction.still)
+        action = MMFI_TO_BEHAVIOR.get(MMFI_ACTIONS[idx], BehaviorAction.normal_activity)
         return BehaviorPrediction(action=action, confidence=conf)

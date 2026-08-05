@@ -9,7 +9,18 @@
 """
 import json
 import threading
+import time
 from pathlib import Path
+
+
+MMFI_ACTIONS = {
+    "walking",
+    "falling",
+    "sitting_still",
+    "standing_up",
+    "lying",
+    "normal_activity",
+}
 
 from .sources.mmvital_source import MmVitalSource
 
@@ -45,13 +56,36 @@ class MMFiSource:
         raw = self.frames[self._idx % len(self.frames)]
         self._idx += 1
         return {
-            "timestamp_ms": raw.get("timestamp_ms"),
-            "device_id": raw.get("device_id", "MMFI_RADAR_SAMPLE"),
-            "breath_rate": raw.get("breath_rate"),  # 可能为 None（样例无生命体征真值）
-            "heart_rate": raw.get("heart_rate"),    # 可能为 None
+            "timestamp_ms": raw.get("timestamp_ms") or int(time.time() * 1000),
+            "device_id": raw.get("device_id") or "MMFI_RADAR_SAMPLE",
+            "breath_rate": raw.get("breath_rate"),
+            "heart_rate": raw.get("heart_rate"),
             "chest_displacement_mm": raw.get("chest_displacement_mm"),
             "motion_flag": bool(raw.get("motion_flag", False)),
-            "ahi_index": raw.get("ahi_index"),      # 可能为 None
+            "ahi_index": raw.get("ahi_index"),
+            "source": "mmfi",
+        }
+
+    def next_frame(self) -> dict | None:
+        """返回标准化的完整帧；缺失行为/报警字段时使用安全默认值。"""
+        vital = self.next_vital()
+        if vital is None:
+            return None
+        raw = self.frames[(self._idx - 1) % len(self.frames)]
+        action = raw.get("behavior", {}).get("action") if isinstance(raw.get("behavior"), dict) else raw.get("action")
+        if action not in MMFI_ACTIONS:
+            action = "normal_activity"
+        return {
+            "timestamp_ms": vital["timestamp_ms"],
+            "device_id": vital["device_id"],
+            "vital": {
+                "breath_rate": vital["breath_rate"],
+                "heart_rate": vital["heart_rate"],
+                "chest_displacement_mm": vital["chest_displacement_mm"],
+                "motion_flag": vital["motion_flag"],
+            },
+            "behavior": {"action": action, "action_confidence": 0.0},
+            "alert": {"level": "yellow", "type": "none", "message": "", "suggested_action": ""},
             "source": "mmfi",
         }
 

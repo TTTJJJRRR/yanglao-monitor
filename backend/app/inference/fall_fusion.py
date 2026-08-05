@@ -32,7 +32,7 @@ def fuse(
         is_fall: 是否判定为跌倒
         alert_level: 'red' | 'yellow' | None
     """
-    action = BehaviorAction.still.value
+    action = BehaviorAction.normal_activity.value
     confidence = 0.5
     is_fall = False
     alert_level = None
@@ -62,8 +62,8 @@ def fuse(
         action = radar_action
         confidence = radar_conf
     else:
-        # 低置信雷达信号不可靠，回落为静止，避免大屏误显「跌倒」
-        action = BehaviorAction.still.value
+        # 低置信雷达信号不可靠，回落为正常活动，避免大屏误显「跌倒」
+        action = BehaviorAction.normal_activity.value
         confidence = 0.5
 
     return {

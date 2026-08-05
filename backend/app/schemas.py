@@ -23,9 +23,9 @@ class UserOut(BaseModel):
 class VitalIn(BaseModel):
     timestamp_ms: int
     device_id: str
-    breath_rate: float = Field(ge=0)
-    heart_rate: float = Field(ge=0)
-    chest_displacement_mm: float = Field(ge=0)
+    breath_rate: float | None = Field(default=None, ge=0)
+    heart_rate: float | None = Field(default=None, ge=0)
+    chest_displacement_mm: float | None = Field(default=None, ge=0)
     motion_flag: bool
     ahi_index: float | None = None
 
