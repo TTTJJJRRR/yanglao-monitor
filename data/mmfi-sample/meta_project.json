@@ -1,0 +1,16 @@
+{
+  "dataset": "MMFi",
+  "environment": "E01",
+  "student": "S01",
+  "action": "A01",
+  "subject_id": "S01",
+  "device_id": "MMFI_RADAR_SAMPLE",
+  "source_path": "D:\\S01\\S01\\A01",
+  "frame_count": 297,
+  "modalities": ["rgb", "mmwave", "depth", "infra1", "infra2", "lidar", "wifi-csi"],
+  "timestamp_status": "synthetic timestamps for pipeline validation only",
+  "fps": 20,
+  "start_timestamp_ms": 1690000000000,
+  "alignment_error_ms": null,
+  "privacy_status": "local validation only; do not upload raw RGB to cloud"
+}

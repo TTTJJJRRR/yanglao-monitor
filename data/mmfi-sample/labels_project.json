@@ -1,0 +1,10 @@
+{
+  "video_id": "MMFi_E01_S01_A01",
+  "source": "MMFi_action_segments.csv",
+  "environment": "E01",
+  "subject_id": "S01",
+  "action_id": "A01",
+  "segments": "see MMFi_action_segments.csv",
+  "project_action": null,
+  "label_note": "MMFi action IDs must be mapped to the project's six action labels after confirming the official action table. This is not a COCO annotation file."
+}

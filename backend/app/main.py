@@ -1,10 +1,11 @@
 import asyncio
 from contextlib import asynccontextmanager
-from typing import Any
 
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
+from .bus import clients, broadcast
 from .config import get_settings
 from .database import Base, engine, SessionLocal
 from .mock import generate_alert, generate_behavior, generate_vital
@@ -12,15 +13,44 @@ from .models import Alert, BehaviorEvent, User, VitalRecord
 from .routers.alerts import router as alerts_router
 from .routers.auth import router as auth_router, seed_admin
 from .routers.behaviors import router as behaviors_router
+from .routers.edge import router as edge_router
 from .routers.vitals import router as vitals_router
 from .ws import websocket_endpoint
+from .data_source import get_source, set_source, next_mmfi_messages, next_real_vital, available_sources
 
 settings = get_settings()
-clients: set[WebSocket] = set()
 
 
 async def mock_stream() -> None:
+    """后台推送任务：根据全局数据源选择 mock 或 mmfi。
+
+    - mock：复用现有生成器，写库 + 广播（原逻辑）。
+    - mmfi：读取 data/mmfi-sample/radar_sample.jsonl，仅广播不落库
+      （样例生命体征为 null，不满足 VitalRecord 非空约束；样例仅含雷达帧，
+      无行为/报警真值）。行为/跌倒演示仍可走前端手动 POST /api/simulate/fall。
+    """
     while True:
+        if get_source() == "mmfi":
+            for msg in next_mmfi_messages():
+                await broadcast(msg)
+            await asyncio.sleep(1)
+            continue
+
+        if get_source() == "real":
+            vital = next_real_vital()
+            if vital is not None:
+                db = SessionLocal()
+                try:
+                    record = VitalRecord(**vital)
+                    db.add(record)
+                    db.commit()
+                    db.refresh(record)
+                    await broadcast({"type": "vital", "data": {**vital, "id": record.id}})
+                finally:
+                    db.close()
+            await asyncio.sleep(1)
+            continue
+
         db = SessionLocal()
         try:
             vital = generate_vital()
@@ -49,17 +79,6 @@ async def mock_stream() -> None:
         await asyncio.sleep(1)
 
 
-async def broadcast(message: dict[str, Any]) -> None:
-    stale: list[WebSocket] = []
-    for client in clients:
-        try:
-            await client.send_json(message)
-        except Exception:
-            stale.append(client)
-    for client in stale:
-        clients.discard(client)
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
@@ -79,6 +98,7 @@ app.include_router(auth_router, prefix=settings.api_prefix)
 app.include_router(vitals_router, prefix=settings.api_prefix)
 app.include_router(behaviors_router, prefix=settings.api_prefix)
 app.include_router(alerts_router, prefix=settings.api_prefix)
+app.include_router(edge_router, prefix=settings.api_prefix)
 
 
 @app.websocket("/ws")
@@ -109,3 +129,19 @@ async def simulate_fall():
         return {"ok": True, "alert": {"id": alert.id, **payload}}
     finally:
         db.close()
+
+
+class DataSourceSwitch(BaseModel):
+    source: str
+
+
+@app.get("/api/data-source")
+async def get_data_source():
+    return {"source": get_source(), "options": available_sources()}
+
+
+@app.post("/api/data-source")
+async def switch_data_source(body: DataSourceSwitch):
+    if not set_source(body.source):
+        raise HTTPException(status_code=400, detail="invalid source, must be one of " + str(available_sources()))
+    return {"source": get_source(), "options": available_sources()}

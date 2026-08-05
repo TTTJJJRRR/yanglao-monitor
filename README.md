@@ -73,6 +73,37 @@ yanglao-monitor/
 
 > 待 M0 由 Cursor 生成脚手架后补充。
 
+## M0 运行说明
+
+### 1. 启动后端
+
+```bash
+cd backend
+pip install -r requirements.txt
+bash run.sh
+```
+
+启动后访问 [http://localhost:8000/docs](http://localhost:8000/docs) 查看 Swagger。
+
+### 2. 启动前端
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+前端默认连接 `ws://localhost:8000/ws`，先登录再进入大屏。
+
+### 3. 登录账号
+
+- 用户名：`admin`
+- 密码：`admin123`
+
+### 4. 演示跌倒预警
+
+登录后可直接等待后端模拟数据流；也可以通过 Swagger 调用 `POST /api/simulate/fall` 触发跌倒预警（若后续接口扩展，可用于现场演示）。
+
 ## 许可证
 
 项目源码内部研发使用，未开源。引用开源组件均已标注来源（见 docs）。
