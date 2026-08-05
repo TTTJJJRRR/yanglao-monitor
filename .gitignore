@@ -31,6 +31,12 @@ datasets/
 .DS_Store
 Thumbs.db
 
+# ===== 运行时产物（数据库 / 日志，绝不入库） =====
+*.db
+*.sqlite3
+*.sqlite
+*.log
+
 # ===== 本项目工具（cursor 指挥家，非交付物源码） =====
 cursor-orchestrator/results/
 cursor-orchestrator/node_modules/
