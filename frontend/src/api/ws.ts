@@ -5,7 +5,7 @@ export function createWs(token: string, onMessage: (msg: StreamMessage) => void,
   let closed = false
 
   const connect = () => {
-    ws = new WebSocket(`ws://localhost:8000/ws?token=${token}`)
+    ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws?token=${token}`)
     ws.onopen = () => onStatus(true)
     ws.onclose = () => {
       onStatus(false)
