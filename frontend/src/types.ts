@@ -10,7 +10,7 @@ export type VitalData = {
   source?: 'mock' | 'real' | 'mmfi'
 }
 
-export type BehaviorAction = 'walking' | 'falling' | 'sitting_still' | 'standing_up' | 'lying' | 'normal_activity'
+export type BehaviorAction = 'walking' | 'standing' | 'sitting_still' | 'standing_up' | 'crouching' | 'lying' | 'lying_floor' | 'falling' | 'normal_activity'
 
 export type BehaviorData = {
   id?: number

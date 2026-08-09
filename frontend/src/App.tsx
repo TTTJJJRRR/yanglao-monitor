@@ -22,10 +22,13 @@ const sourceLabel: Record<SourceType, string> = {
 
 const behaviorMap: Record<BehaviorAction, string> = {
   walking: '行走',
-  falling: '跌倒',
-  sitting_still: '坐着不动',
+  standing: '站立',
+  sitting_still: '静坐',
   standing_up: '起身',
-  lying: '躺下',
+  crouching: '弯腰/蹲下',
+  lying: '卧床',
+  lying_floor: '倒地不起',
+  falling: '跌倒',
   normal_activity: '正常活动',
 }
 
