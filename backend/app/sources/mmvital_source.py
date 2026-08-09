@@ -131,14 +131,18 @@ class RadarPhaseProvider(PhaseProvider):
         window = self.next_window()
         if window is None:
             return None
-        est = MmVitalEstimator(self.fs).estimate(window)
+        dual = estimate_dual(window, self.fs)
         return {
             "timestamp_ms": int(time.time() * 1000),
             "device_id": "RADAR_01",
-            "breath_rate": est.breath_rate,
-            "heart_rate": est.heart_rate,
+            "breath_rate": dual.breath_rate,
+            "heart_rate": dual.heart_rate,
             "chest_displacement_mm": round(max(window) - min(window), 3) if window else None,
-            "motion_flag": est.motion_flag,
+            "motion_flag": dual.motion_flag,
+            "quality": dual.quality,
+            "vital_agreement": dual.agreement,
+            "needs_review": dual.needs_review,
+            "watch_reason": dual.watch_reason,
             "ahi_index": None,
             "source": VitalSource.real.value,
         }
