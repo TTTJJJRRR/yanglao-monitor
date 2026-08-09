@@ -19,11 +19,16 @@ class VitalSource(str, Enum):
 
 
 class BehaviorAction(str, Enum):
-    walking = "walking"
-    falling = "falling"
-    sitting_still = "sitting_still"
-    standing_up = "standing_up"
-    lying = "lying"
+    # 8 类安全动作（肆月 2026-08-09 锁定，老人安全视角）
+    walking = "walking"              # 走动
+    standing = "standing"            # 站立（从 normal_activity 拆出）
+    sitting_still = "sitting_still"  # 静坐
+    standing_up = "standing_up"      # 起身
+    crouching = "crouching"          # 弯腰/蹲下/拾物（易误判为跌倒→必须单类）
+    lying = "lying"                  # 卧床休息
+    lying_floor = "lying_floor"      # 倒地不起（跌倒后状态=急救）
+    falling = "falling"              # 跌倒（P0 红色警报）
+    # 未知/其他兜底（低置信；融合层对之升级确认，不视为安全）
     normal_activity = "normal_activity"
 
 
