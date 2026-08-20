@@ -1,5 +1,7 @@
 const API_BASE = (import.meta.env.VITE_API_BASE as string) || '/api'
 
+import type { AlertData } from '../types'
+
 export function getToken() {
   return localStorage.getItem('access_token')
 }
@@ -18,18 +20,16 @@ export async function login(username: string, password: string) {
   return res.json() as Promise<{ access_token: string; token_type: string; role: string }>
 }
 
-export async function getDataSource() {
-  const res = await fetch(`${API_BASE}/data-source`)
-  if (!res.ok) throw new Error('获取数据源失败')
-  return res.json() as Promise<{ source: string; options: string[] }>
+function authHeaders() {
+  return { Authorization: `Bearer ${getToken() || ''}` }
 }
 
-export async function setDataSource(source: string) {
-  const res = await fetch(`${API_BASE}/data-source`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ source }),
-  })
-  if (!res.ok) throw new Error('切换数据源失败')
-  return res.json() as Promise<{ source: string; options: string[] }>
+export async function getAlerts(limit = 50) {
+  const res = await fetch(`${API_BASE}/alerts?limit=${limit}`, { headers: authHeaders() })
+  if (!res.ok) throw new Error('获取预警列表失败')
+  return res.json() as Promise<AlertData[]>
+}
+
+export async function logout() {
+  localStorage.removeItem('access_token')
 }
