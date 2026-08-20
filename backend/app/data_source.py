@@ -6,6 +6,8 @@
   不满足 VitalRecord 的非空约束，且样例本身只含雷达帧、无行为/报警真值，
   故只把帧结构映射到项目平坦 vital 契约并推送给前端做管道验证。
 - real：真实雷达源（M0 占位 / M1 接 mmVital）。返回有效帧，写库 + 广播。
+- replay：回放同学采集的 jsonl（成品体征 + 动作标签），仅广播不落库。
+  诚实标注：非实时检测，仅供验证前端管道与动作标签流转。
 """
 import json
 import threading
@@ -23,11 +25,13 @@ MMFI_ACTIONS = {
 }
 
 from .sources.mmvital_source import MmVitalSource
+from .sources.replay_source import ReplaySource
 
 DATA_FILE = Path(__file__).resolve().parents[2] / "data" / "mmfi-sample" / "radar_sample.jsonl"
 
-AVAILABLE = ["mock", "mmfi", "real"]
+AVAILABLE = ["mock", "mmfi", "real", "replay"]
 _real = MmVitalSource()
+_replay = ReplaySource()
 
 _current_source = {"value": "mock"}
 _lock = threading.Lock()
@@ -115,6 +119,11 @@ def next_mmfi_messages() -> list[dict]:
     if vital is None:
         return []
     return [{"type": "vital", "data": vital}]
+
+
+def next_replay_messages() -> list[dict]:
+    """构造 replay 模式下要广播的消息列表（vital ×N + behavior，仅广播不落库）。"""
+    return _replay.next_messages()
 
 
 def next_real_vital() -> dict | None:

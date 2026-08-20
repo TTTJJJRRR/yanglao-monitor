@@ -44,6 +44,7 @@ class EmotionLabel(str, Enum):
 class AlertLevel(str, Enum):
     red = "red"
     yellow = "yellow"
+    critical = "critical"
 
 
 class User(Base):

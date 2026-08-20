@@ -38,6 +38,11 @@ class VisionPose(BaseModel):
     device_id: str = "CAM_01"
     fall_score: float = 0.0
     confidence: float = 0.0
+    is_fall: bool | None = None
+    alert_level: str | None = None
+    watch: bool | None = None
+    needs_review: bool | None = None
+    watch_reason: str | None = None
 
 
 # 最近一次双模态状态（单设备演示用；M2 按 device_id 分桶）
@@ -46,6 +51,8 @@ _state = {
     "radar_conf": 0.0,
     "vision_fall_score": 0.0,
     "vision_conf": 0.0,
+    "vision_watch": False,
+    "vision_alert_level": None,
 }
 
 
@@ -72,7 +79,6 @@ async def _sync_and_decide() -> dict:
         behavior_msg = save_and_build_message(db, behavior_payload, "behavior")
         await broadcast(behavior_msg)
 
-        # 广播雷达/视觉实时状态，供前端大屏显示（即使未触发报警也持续更新）
         await broadcast({
             "type": "radar_status",
             "data": {
@@ -86,6 +92,9 @@ async def _sync_and_decide() -> dict:
             "data": {
                 "fall_score": round(_state["vision_fall_score"], 3),
                 "confidence": round(_state["vision_conf"], 3),
+                "is_fall": bool(decision["is_fall"]),
+                "alert_level": decision["alert_level"],
+                "watch": bool(_state["vision_watch"]),
             },
         })
 
@@ -108,8 +117,6 @@ async def _sync_and_decide() -> dict:
 
 @router.post("/edge/behavior")
 async def post_radar_behavior(body: RadarBehavior):
-    # 生产环境：body.action / confidence 应由边缘节点的 BehaviorClassifier 实现
-    # （见 app.inference.behavior_classifier）对雷达信号推理得出，而非手敲。
     _state["radar_action"] = body.action
     _state["radar_conf"] = body.confidence
     decision = await _sync_and_decide()
@@ -119,17 +126,11 @@ async def post_radar_behavior(body: RadarBehavior):
 class RadarFrameIn(BaseModel):
     device_id: str = "RADAR_01"
     timestamp_ms: int = 0
-    signature: list | None = None  # 真实模型输入张量（点云/微多普勒），当前留空
+    signature: list | None = None
 
 
 @router.post("/edge/radar-frame")
 async def post_radar_frame(body: RadarFrameIn):
-    """雷达信号 → 行为 的模型接入点（空挡接口）。
-
-    边缘节点把一帧雷达信号（点云/微多普勒）发来，由已注册的
-    BehaviorClassifier 推理出行为。模型未接入时显式返回 503，
-    不伪造检测结果。模型就绪后无需改此端点，只 register_classifier 即可。
-    """
     classifier = get_classifier()
     frame = RadarFrame(
         device_id=body.device_id,
@@ -150,5 +151,9 @@ async def post_radar_frame(body: RadarFrameIn):
 async def post_vision_pose(body: VisionPose):
     _state["vision_fall_score"] = body.fall_score
     _state["vision_conf"] = body.confidence
+    _state["vision_watch"] = bool(body.watch or body.needs_review)
+    _state["vision_alert_level"] = body.alert_level
+    if body.is_fall is True:
+        _state["vision_fall_score"] = max(_state["vision_fall_score"], 0.8)
     decision = await _sync_and_decide()
     return {"ok": True, "decision": decision}

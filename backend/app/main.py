@@ -1,4 +1,5 @@
 import asyncio
+import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, WebSocket
@@ -16,9 +17,11 @@ from .routers.behaviors import router as behaviors_router
 from .routers.edge import router as edge_router
 from .routers.vitals import router as vitals_router
 from .ws import websocket_endpoint
-from .data_source import AVAILABLE, available_sources, get_source, next_mmfi_messages, next_real_vital, set_source
+from .data_source import AVAILABLE, available_sources, get_source, next_mmfi_messages, next_real_vital, next_replay_messages, set_source
+from .monitoring import DeviceMonitor
 
 settings = get_settings()
+monitor = DeviceMonitor(timeout_s=5.0)
 
 
 async def mock_stream() -> None:
@@ -28,11 +31,24 @@ async def mock_stream() -> None:
     - mmfi：读取 data/mmfi-sample/radar_sample.jsonl，仅广播不落库
       （样例生命体征为 null，不满足 VitalRecord 非空约束；样例仅含雷达帧，
       无行为/报警真值）。行为/跌倒演示仍可走前端手动 POST /api/simulate/fall。
+    - replay：回放同学采集的 jsonl（成品体征 + 动作标签），仅广播不落库
+      （诚实标注：非实时检测，仅供验证前端管道）。
     """
     while True:
+        if get_source() == "replay":
+            for msg in next_replay_messages():
+                await broadcast(msg, source="replay")
+            # 以「now」刷新心跳，避免把回放的旧时间戳误判为设备离线
+            monitor.touch("replay", int(time.time() * 1000))
+            await monitor.publish_checks()
+            await asyncio.sleep(1)
+            continue
+
         if get_source() == "mmfi":
             for msg in next_mmfi_messages():
                 await broadcast(msg, source="mmfi")
+                monitor.touch("mmfi", msg["data"].get("timestamp_ms"))
+            await monitor.publish_checks()
             await asyncio.sleep(1)
             continue
 
@@ -46,8 +62,10 @@ async def mock_stream() -> None:
                     db.commit()
                     db.refresh(record)
                     await broadcast({"type": "vital", "data": {**vital, "id": record.id}}, source="real")
+                    monitor.touch("real", vital.get("timestamp_ms"))
                 finally:
                     db.close()
+            await monitor.publish_checks()
             await asyncio.sleep(1)
             continue
 
@@ -59,6 +77,7 @@ async def mock_stream() -> None:
             db.commit()
             db.refresh(vital_record)
             await broadcast({"type": "vital", "data": {**vital, "id": vital_record.id}}, source="mock")
+            monitor.touch("mock", vital.get("timestamp_ms"))
 
             if int(vital_record.timestamp_ms) % 5 == 0:
                 behavior = generate_behavior()
@@ -76,6 +95,7 @@ async def mock_stream() -> None:
                     await broadcast({"type": "alert", "data": {"id": alert.id, **alert_payload}})
         finally:
             db.close()
+        await monitor.publish_checks()
         await asyncio.sleep(1)
 
 

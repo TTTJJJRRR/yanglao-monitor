@@ -56,13 +56,16 @@ class MmWaveBehaviorCNN(BehaviorClassifier):
             tensor = preprocess_sequence(frames)
         elif isinstance(sig, (list, tuple)):
             tensor = preprocess_sequence(list(sig))
-        elif hasattr(sig, "shape") and len(sig.shape) == 4:
+        elif hasattr(sig, "shape"):
             tensor = sig
         else:
             raise ValueError("signature 需为 mmwave 目录路径、点云序列或预处理张量")
 
         with torch.no_grad():
-            input_tensor = torch.from_numpy(tensor).float().unsqueeze(0).to(self.device)
+            if hasattr(tensor, "detach"):
+                input_tensor = tensor.detach().float().unsqueeze(0).to(self.device)
+            else:
+                input_tensor = torch.from_numpy(tensor).float().unsqueeze(0).to(self.device)
             logits = self.model(input_tensor)
             probs = torch.softmax(logits, dim=1)[0]
             idx = int(probs.argmax())

@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import math
 import time
+from collections import deque
 from typing import Callable, Dict, Tuple
 
 try:
@@ -34,7 +35,6 @@ def _angle_with_vertical(vx: float, vy: float) -> float:
 
 def fall_score_from_keypoints(kpts: Keypoints) -> float:
     """BlazePose 33 关键点 -> fall_score 0~1（纯几何，无训练）。"""
-    # 关键索引: 11 左肩, 12 右肩, 23 左髋, 24 右髋, 0 鼻
     def mid(a: int, b: int):
         ka, kb = kpts.get(a), kpts.get(b)
         if not ka or not kb:
@@ -51,7 +51,6 @@ def fall_score_from_keypoints(kpts: Keypoints) -> float:
     torso_vy = shoulder[1] - hip[1]
     torso_angle = _angle_with_vertical(torso_vx, torso_vy)  # 0=直立, 90=平躺
 
-    # 质心(鼻)相对髋的高度比：站立时鼻远高于髋，躺地时几乎同高
     hip_y = hip[1]
     ref_y = shoulder[1]
     height_ratio = 0.0
@@ -75,16 +74,30 @@ def standing_keypoints() -> Keypoints:
 
 
 def fallen_keypoints() -> Keypoints:
-    """躺地样例：身体整体水平（肩在一端、髋在另一端，左右不对称），鼻与髋同高。
-
-    注意：必须用左右不对称的 x 表示水平躯干，否则左右中点会抹掉水平朝向，
-    使算法误判为竖直。
-    """
+    """躺地样例：身体整体水平（肩在一端、髋在另一端，左右不对称），鼻与髋同高。"""
     return {
-        11: (0.20, 0.60, 0.0), 12: (0.25, 0.60, 0.0),  # 肩靠近头部一端
-        23: (0.80, 0.62, 0.0), 24: (0.85, 0.62, 0.0),  # 髋靠近另一端
+        11: (0.20, 0.60, 0.0), 12: (0.25, 0.60, 0.0),
+        23: (0.80, 0.62, 0.0), 24: (0.85, 0.62, 0.0),
         0: (0.10, 0.61, 0.0), 29: (0.95, 0.62, 0.0), 30: (0.98, 0.62, 0.0),
     }
+
+
+class FallDetector:
+    """滑动窗口确认器：连续 K 帧高跌倒分才输出红警。"""
+
+    def __init__(self, window_size: int = 3, threshold: float = 0.6):
+        self.window_size = window_size
+        self.threshold = threshold
+        self._scores: deque[float] = deque(maxlen=window_size)
+
+    def update(self, fall_score: float) -> dict:
+        self._scores.append(float(fall_score))
+        consecutive_high = len(self._scores) == self.window_size and all(s >= self.threshold for s in self._scores)
+        if consecutive_high:
+            return {"is_fall": True, "alert_level": "red", "watch": False, "window": list(self._scores)}
+        if fall_score >= self.threshold:
+            return {"is_fall": False, "alert_level": "yellow", "watch": True, "window": list(self._scores)}
+        return {"is_fall": False, "alert_level": None, "watch": False, "window": list(self._scores)}
 
 
 class VisionNode:
@@ -93,10 +106,12 @@ class VisionNode:
         backend: str = "http://localhost:8000",
         interval: float = 2.0,
         keypoint_provider: Callable[[], Keypoints] | None = None,
+        fall_detector: FallDetector | None = None,
     ):
         self.backend = backend
         self.interval = interval
         self.keypoint_provider = keypoint_provider
+        self.fall_detector = fall_detector or FallDetector()
         self._mediapipe = None
         try:
             import mediapipe as mp
@@ -116,11 +131,16 @@ class VisionNode:
     def run_once(self) -> dict:
         kpts = self._capture_keypoints()
         if kpts is None:
-            return {"device_id": "CAM_01", "fall_score": 0.0, "confidence": 0.0}
+            return {"device_id": "CAM_01", "fall_score": 0.0, "confidence": 0.0, "is_fall": False, "alert_level": None, "watch": False}
         score = fall_score_from_keypoints(kpts)
-        # 置信度：极端值(明显站/明显倒)高，中间模糊带低
         conf = 0.92 if (score > 0.6 or score < 0.2) else 0.7
-        return {"device_id": "CAM_01", "fall_score": score, "confidence": conf}
+        verdict = self.fall_detector.update(score)
+        return {
+            "device_id": "CAM_01",
+            "fall_score": score,
+            "confidence": conf,
+            **verdict,
+        }
 
     def loop(self) -> None:
         if requests is None:

@@ -1,21 +1,20 @@
-"""雷达 + 视觉 跌倒融合决策（M3 评审命门）。
+"""雷达 + 视觉 跌倒融合决策（M5 安全翻转）。
 
 TI 官方没有现成的跌倒检测 lab，且视觉骨骼化不上云（隐私红线 R-P0-03），
 因此跌倒判定必须在边缘侧做「雷达行为 + 视觉姿态」双模态融合。
 
-接口（M0 骨架）：
-    fuse(radar_action, radar_conf, vision_fall_score, vision_conf) -> dict
-返回融合后的行为事件 + 是否触发跌倒报警。
-
-算法 TODO（详见 deliverables/tech-plan/opensource-porting-guide）：
-- 雷达侧：移植 radar-lab/patient_monitoring 的 6 类 CNN
-  （行走 / 坐下 / 躺下 / 弯腰 / 跌倒 / 静止）。
-- 视觉侧：移植 MediaPipe Pose 的跌倒线索
-  （躯干-地面夹角、质心高度骤降 → fall_score）。
-- 融合策略：双模态一致 → 高置信红警；单模态高置信 → 黄警待确认；
-  冲突时以雷达为准（隐私安全优先，避免误报惊扰）。
+本模块采用宁误报不漏报策略：
+- 易混淆姿态或未知低置信输入，不再直接视为安全，而是升级为盯防。
+- 跌倒判定保留红/黄警。
 """
 from ..models import BehaviorAction
+
+
+FALL_AMBIGUOUS = {
+    BehaviorAction.crouching.value,
+    BehaviorAction.lying.value,
+    BehaviorAction.lying_floor.value,
+}
 
 
 def fuse(
@@ -31,44 +30,53 @@ def fuse(
         confidence: 融合置信度
         is_fall: 是否判定为跌倒
         alert_level: 'red' | 'yellow' | None
+        needs_review: 是否需要持续盯防
+        watch_reason: 盯防原因
     """
     action = BehaviorAction.normal_activity.value
     confidence = 0.5
     is_fall = False
     alert_level = None
+    needs_review = False
+    watch_reason = None
 
     radar_fall = radar_action == BehaviorAction.falling.value and radar_conf >= 0.6
     vision_fall = vision_fall_score >= 0.6 and vision_conf >= 0.5
 
     if radar_fall and vision_fall:
-        # 双模态一致 → 高置信跌倒（红警）
         is_fall = True
         action = BehaviorAction.falling.value
         confidence = max(radar_conf, vision_conf)
         alert_level = "red"
     elif radar_fall and not vision_fall:
-        # 仅雷达判定 → 黄警（待家属 / 护工确认，避免误报）
         is_fall = True
         action = BehaviorAction.falling.value
         confidence = radar_conf
         alert_level = "yellow"
     elif vision_fall and not radar_fall:
-        # 仅视觉判定 → 黄警（视觉不上云，仅作边缘辅助）
         is_fall = True
         action = BehaviorAction.falling.value
         confidence = vision_conf
         alert_level = "yellow"
-    elif radar_action in {a.value for a in BehaviorAction} and radar_conf >= 0.5:
+    elif radar_action in FALL_AMBIGUOUS or radar_action == BehaviorAction.normal_activity.value:
+        if radar_conf < 0.5:
+            needs_review = True
+            watch_reason = "low_conf_ambiguous_or_unknown"
+        else:
+            action = radar_action or BehaviorAction.normal_activity.value
+            confidence = radar_conf
+    elif radar_action in {BehaviorAction.walking.value, BehaviorAction.standing.value, BehaviorAction.sitting_still.value, BehaviorAction.standing_up.value} and radar_conf >= 0.5:
         action = radar_action
         confidence = radar_conf
     else:
-        # 低置信雷达信号不可靠，回落为正常活动，避免大屏误显「跌倒」
-        action = BehaviorAction.normal_activity.value
-        confidence = 0.5
+        needs_review = True
+        watch_reason = "fallback_watch"
 
     return {
         "action": action,
         "confidence": round(confidence, 2),
         "is_fall": is_fall,
         "alert_level": alert_level,
+        "needs_review": needs_review,
+        "watch_reason": watch_reason,
     }

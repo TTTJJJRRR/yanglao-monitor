@@ -1,0 +1,16 @@
+{
+  "segment_id": "session_20260812_134441_walking_candidate_02_48p0-75p0",
+  "source_session": "session_20260812_134441",
+  "video_file": "session_20260812_134441_walking_candidate_02_48p0-75p0.mp4",
+  "radar_file": "session_20260812_134441_walking_candidate_02_48p0-75p0.jsonl",
+  "scene": "living_room",
+  "action": "walking_candidate_02",
+  "label_status": "candidate_pending_manual_confirmation",
+  "start_timestamp_ms": 1786513530338,
+  "end_timestamp_ms": 1786513557338,
+  "duration_s": 27,
+  "video_frame_count": 542,
+  "radar_record_count": 306,
+  "time_base": "UTC milliseconds",
+  "note": "No clear falling event observed in contact-sheet review."
+}
