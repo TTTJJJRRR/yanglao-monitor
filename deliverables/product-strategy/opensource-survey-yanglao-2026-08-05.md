@@ -155,4 +155,43 @@
 
 ---
 
+---
+
+## 8. 🔍 2026-08-09 GitHub 前沿补充检索（连接器实搜）
+
+> 方法：用 GitHub 连接器 `search_repositories` 实搜 "mmwave fall detection / HAR transformer / radar vision multimodal / mmwave vital signs / elderly monitoring radar / multimodal fall detection" 等 13 组关键词。下列为**高信噪比 + 可借鉴**项，按可升级我们现有代码的程度分档。
+
+### 8.1 雷达行为识别新架构（可升级 `mmwave_cnn` 朴素 CNN）
+- **`AksharThakor/RadarPose-HybridNet`** — Point Transformer(3D 姿态) + CTR-GCN(时序) 混合，23 类 **95.79%**。**借鉴：点云→Point Transformer 替代我们 voxel-grid CNN，提点云 HAR 精度。**
+- **`Alan-cs1/MmWave-Motion-Waveform-HAR`** — ICMEW 2025，Motion Waveform 预处理喂 Transformer 分类。**借鉴：给 `preprocess.py` 加 waveform 表征分支（我们当前只有 voxel grid）。**
+- **`yizzfz/MiliPoint` (⭐125)** — 开源 mmWave 点云 HAR 数据集，可预训练/数据增强。
+- **`1YifanGuo/mmLM`** — 点云 + 语言模型对抗域偏移（跨受试者泛化）。**借鉴：解决"采够样本/跨人泛化"痛点。**
+
+### 8.2 多模态 / 雷达-视觉融合新范式（我们主线）
+- **`jpnm561/HAR-UP` (⭐53)** — 成熟多模态跌倒检测系统。
+- **`DHUspeech/fall-mamba`** — **Fall-Mamba：Masked Mamba(状态空间模型) 多模态融合**，2024-2026 最新架构趋势，比 Transformer 更省算力做长时序。**借鉴：融合层从 `fall_fusion.py` 的 if/else 规则升级为 Mamba/Transformer 时序融合（远期）。**
+- **`faresaljbour/A-Dual-Transformer-Fusion-Framework`** — 视频 + 2D 骨骼双分支 Transformer 融合。**借鉴：视觉侧（MediaPipe 骨骼）升级为 Transformer 融合。**
+- **`01Elaine/fall-detection-multimodal`** — 视频(RTMPose+ST-GCN) + 音频(PANNs) **决策级融合** + 深度。**与我们 `fall_fusion.py` 决策级融合同构，可参考其融合权重设计。**
+- **`MODAL-UNINA/Federated-Learning-based-Fall-Detection-with-Multimodal-Data-Fusion`** — 联邦学习多模态融合（隐私）。**远期：多家庭部署参考。**
+
+### 8.3 生命体征（直接对标 `mmvital_estimator`）
+- **`phish-tech/mmWave-Heartbeat-Dataset-Preprocessing-Toolbox-` (⭐60, 更新 2026-08)** — **开源 77GHz 单人 .bin 原始数据 + MATLAB EEMD 呼吸/心跳分离基线。★最可借鉴：用其真实数据验证我们的 DFT 周期图估计；EEMD 作对照方法。**
+
+### 8.4 隐私优先产品哲学（印证我们方向）
+- **`marminguez/theguardian` / `Yeeejj/guardian-priv-monitor`** — 被动毫米波 → **8 项老人可读日常信号**，全本地、无云、无相机、无音频。**几乎就是我们的产品愿景（8 类行为=8 信号），印证"不上云/不拍照"是前沿正确方向。**
+- **`SiDOlu/aetherics`** — Edge-AI + 毫米波 + 热阵 + MEMS，无相机环境智能。
+- **`Sameer856/EchoCare` / `AsadIdreesEE/LexaCare_Project`** — 雷达(+热成像/麦克风) 老人日常活动 + 告警。
+
+### 8.5 雷达跌倒（与 `radar-lab/mmfall` 互补）
+- **`DarkSZChao/MMWave-radar-human-tracking-and-fall-detection` (⭐77, 更新 2026-08)** — 多人跟踪 + 跌倒，最新。**比 mmfall 多 tracking，补我们多目标场景。**
+- **`sareebali/mmwave-radar-fall-detection`** — 点云 CNN 跌倒（PyTorch），轻量可抄。
+
+### 8.6 ⚠️ 诚实 caution（与第 6 节一致）
+- 多数"多模态融合" repo 是 **视频 + 音频，不是雷达 + 视觉**；雷达+视觉融合代码稀缺，我们属较先锋 → 宜借*融合策略*(决策级/双 Transformer/Mamba) 而非照搬模态。
+- 2026 新 repo 多 **0–9⭐（未经验证）**，作"方向参考"；高信噪比：`radar-lab/mmfall`(152) / `yizzfz/MiliPoint`(125) / `phish-tech`(60) / `DarkSZChao`(77) / `HAR-UP`(53)。
+- **License 必须逐仓核实（MIT 优先）**；学术 paper repo 常无显式 license，商用前需确认。
+- `Fall-Mamba` / `RadarPose-HybridNet` 需 torch + 较大数据，等周震宇真实多类数据到位后再升级（现 8 类单类 CNN 先跑通）。
+
+---
+
 > 本报告由产品战略团队 AI 协作生成，重要决策请由产品负责人审定。
