@@ -1,0 +1,19 @@
+{
+  "segment_id": "normal_activity_05_42-65s",
+  "source_session": "session_20260819_171358",
+  "source_radar_directory": "08_19_2026_17_10_41",
+  "video_file": "normal_activity_05_42-65s.mp4",
+  "radar_file": "normal_activity_05_42-65s.jsonl",
+  "scene": "living_room",
+  "action": "normal_activity",
+  "label_status": "candidate_pending_manual_confirmation",
+  "start_timestamp_ms": 1787130884727,
+  "end_timestamp_ms": 1787130907727,
+  "duration_s": 23,
+  "video_frame_count": 341,
+  "radar_record_count": 254,
+  "radar_track_frames": 254,
+  "radar_point_frames": 228,
+  "time_base": "UTC milliseconds from the recording computer system clock",
+  "note": "table/laptop everyday activity with small hand motion; chest_displacement_mm/ahi_index unavailable from current Industrial Visualizer export and kept null to match previous segments.; playback fps corrected to match real duration"
+}

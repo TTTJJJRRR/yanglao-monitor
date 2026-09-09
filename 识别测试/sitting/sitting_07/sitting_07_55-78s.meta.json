@@ -1,0 +1,22 @@
+{
+  "segment_id": "sitting_07_55-78s",
+  "source_session": "session_20260821_162539",
+  "source_radar_directory": "08_21_2026_16_25_49",
+  "video_file": "sitting_07_55-78s.mp4",
+  "radar_file": "sitting_07_55-78s.jsonl",
+  "scene": "living_room",
+  "action": "sitting_still",
+  "label_status": "candidate_pending_manual_confirmation",
+  "start_timestamp_ms": 1787300794640,
+  "end_timestamp_ms": 1787300817640,
+  "duration_s": 23,
+  "video_frame_count": 339,
+  "radar_record_count": 255,
+  "radar_track_frames": 255,
+  "radar_point_frames": 43,
+  "radar_vital_frames": 16,
+  "radar_track_coverage": 1.0,
+  "radar_max_track_dropout_frames": 0,
+  "time_base": "UTC milliseconds from the recording computer system clock",
+  "note": "stable sitting mid window; continuous radar track coverage; chest_displacement_mm/ahi_index unavailable from current Industrial Visualizer export and kept null to match previous segments.; playback fps corrected to match real duration"
+}

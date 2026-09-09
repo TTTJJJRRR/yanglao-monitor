@@ -1,0 +1,19 @@
+{
+  "segment_id": "walking_06_42-65s",
+  "source_session": "session_20260820_150530",
+  "source_radar_directory": "08_20_2026_15_05_43",
+  "video_file": "walking_06_42-65s.mp4",
+  "radar_file": "walking_06_42-65s.jsonl",
+  "scene": "living_room",
+  "action": "walking",
+  "label_status": "candidate_pending_manual_confirmation",
+  "start_timestamp_ms": 1787209595142,
+  "end_timestamp_ms": 1787209618142,
+  "duration_s": 23,
+  "video_frame_count": 349,
+  "radar_record_count": 256,
+  "radar_track_frames": 252,
+  "radar_point_frames": 248,
+  "time_base": "UTC milliseconds from the recording computer system clock",
+  "note": "continuous walking with turns mid window A; room-scale walking with turns is expected; chest_displacement_mm/ahi_index unavailable and kept null.; playback fps corrected to match real duration"
+}

@@ -1,0 +1,21 @@
+{
+  "segment_id": "standing_up_09_45-56s",
+  "source_session": "session_20260825_164434",
+  "source_radar_directory": "08_25_2026_16_44_38",
+  "video_file": "standing_up_09_45-56s.mp4",
+  "radar_file": "standing_up_09_45-56s.jsonl",
+  "scene": "living_room",
+  "action": "standing_up",
+  "label_status": "candidate_pending_manual_confirmation",
+  "start_timestamp_ms": 1787647519643,
+  "end_timestamp_ms": 1787647530643,
+  "duration_s": 11,
+  "video_frame_count": 163,
+  "radar_record_count": 122,
+  "radar_track_frames": 122,
+  "radar_point_frames": 69,
+  "radar_vital_frames": 8,
+  "event_approx_s": 54.5,
+  "time_base": "UTC milliseconds from the recording computer system clock",
+  "note": "Clear sit-to-stand event; includes longer sitting before and short standing after. Walking after stand-up removed. Exported by real UTC timestamps (not container 20 fps labels). chest_displacement_mm/ahi_index unavailable from current Industrial Visualizer export and kept null to match previous segments.; playback fps corrected to match real duration"
+}

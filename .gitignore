@@ -33,6 +33,9 @@ Thumbs.db
 
 # ===== 运行时产物（数据库 / 日志，绝不入库） =====
 *.db
+*.db-wal
+*.db-shm
+*.db-journal
 *.sqlite3
 *.sqlite
 *.log

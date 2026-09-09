@@ -1,0 +1,20 @@
+{
+  "segment_id": "falling_04_21-33s",
+  "source_session": "session_20260822_144711",
+  "source_radar_directory": "08_22_2026_14_47_20",
+  "video_file": "falling_04_21-33s.mp4",
+  "radar_file": "falling_04_21-33s.jsonl",
+  "scene": "living_room",
+  "action": "falling",
+  "label_status": "candidate_pending_manual_confirmation",
+  "start_timestamp_ms": 1787381252845,
+  "end_timestamp_ms": 1787381264845,
+  "duration_s": 12,
+  "video_frame_count": 182,
+  "radar_record_count": 134,
+  "radar_track_frames": 134,
+  "radar_point_frames": 101,
+  "event_approx_s": 1.2,
+  "time_base": "UTC milliseconds from the recording computer system clock",
+  "note": "clear simulated fall onto mat with radar coverage; trimmed early walking and kept longer post-fall lying before getting up; chest_displacement_mm/ahi_index unavailable and kept null; playback fps set to match real duration"
+}

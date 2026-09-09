@@ -1,0 +1,20 @@
+{
+  "segment_id": "falling_01_1-13s",
+  "source_session": "session_20260820_143458",
+  "source_radar_directory": "08_20_2026_14_35_06",
+  "video_file": "falling_01_1-13s.mp4",
+  "radar_file": "falling_01_1-13s.jsonl",
+  "scene": "living_room",
+  "action": "falling",
+  "label_status": "candidate_pending_manual_confirmation",
+  "start_timestamp_ms": 1787207718545,
+  "end_timestamp_ms": 1787207730545,
+  "duration_s": 12,
+  "video_frame_count": 180,
+  "radar_record_count": 133,
+  "radar_track_frames": 131,
+  "radar_point_frames": 84,
+  "event_approx_s": 4.5,
+  "time_base": "UTC milliseconds from the recording computer system clock",
+  "note": "clear simulated fall onto mat; includes short pre-fall and post-fall lying; chest_displacement_mm/ahi_index unavailable from current Industrial Visualizer export and kept null to match previous segments.; playback fps corrected to match real duration"
+}

@@ -1,0 +1,20 @@
+{
+  "segment_id": "walking_11_31-54s",
+  "source_session": "session_20260825_165731",
+  "source_radar_directory": "08_25_2026_16_57_42",
+  "video_file": "walking_11_31-54s.mp4",
+  "radar_file": "walking_11_31-54s.jsonl",
+  "scene": "living_room",
+  "action": "walking",
+  "label_status": "candidate_pending_manual_confirmation",
+  "start_timestamp_ms": 1787648282534,
+  "end_timestamp_ms": 1787648305534,
+  "duration_s": 23,
+  "video_frame_count": 344,
+  "radar_record_count": 256,
+  "radar_track_frames": 256,
+  "radar_point_frames": 251,
+  "radar_vital_frames": 16,
+  "time_base": "UTC milliseconds from the recording computer system clock",
+  "note": "clear back-and-forth walking early/mid window with continuous radar track; room-scale walking with turns is expected; Exported by real UTC timestamps (not container 20 fps labels). chest_displacement_mm/ahi_index unavailable from current Industrial Visualizer export and kept null to match previous segments.; playback fps corrected to match real duration"
+}

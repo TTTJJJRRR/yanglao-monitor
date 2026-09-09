@@ -1,0 +1,19 @@
+﻿{
+    "segment_id":  "sitting_02_49-72s",
+    "source_session":  "session_20260816_142509",
+    "source_radar_directory":  "08_16_2026_14_24_49",
+    "video_file":  "sitting_02_49-72s.mp4",
+    "radar_file":  "sitting_02_49-72s.jsonl",
+    "scene":  "living_room",
+    "action":  "sitting_still",
+    "label_status":  "candidate_pending_manual_confirmation",
+    "start_timestamp_ms":  1786861559063,
+    "end_timestamp_ms":  1786861582063,
+    "duration_s":  23,
+    "video_frame_count":  461,
+    "radar_record_count":  261,
+    "radar_track_frames":  261,
+    "radar_point_frames":  48,
+    "time_base":  "UTC milliseconds from the recording computer system clock",
+    "note":  "Selected from the stable seated portion; raw video and replay JSON remain unchanged."
+}

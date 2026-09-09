@@ -1,0 +1,19 @@
+﻿{
+    "segment_id":  "sitting_old_02_64-87s",
+    "source_session":  "session_20260812_130853",
+    "source_radar_directory":  "08_12_2026_12_50_49",
+    "video_file":  "sitting_old_02_64-87s.mp4",
+    "radar_file":  "sitting_old_02_64-87s.jsonl",
+    "scene":  "living_room",
+    "action":  "sitting_still",
+    "label_status":  "candidate_pending_manual_confirmation",
+    "start_timestamp_ms":  1786511398200,
+    "end_timestamp_ms":  1786511421200,
+    "duration_s":  23,
+    "video_frame_count":  461,
+    "radar_record_count":  261,
+    "radar_track_frames":  261,
+    "radar_point_frames":  40,
+    "time_base":  "UTC milliseconds from the recording computer system clock",
+    "note":  "Split from the original 55s sitting candidate into 20-30s windows."
+}

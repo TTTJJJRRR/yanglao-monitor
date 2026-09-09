@@ -1,0 +1,19 @@
+{
+  "segment_id": "lying_01_20-43s",
+  "source_session": "session_20260819_171921",
+  "source_radar_directory": "08_19_2026_17_17_43",
+  "video_file": "lying_01_20-43s.mp4",
+  "radar_file": "lying_01_20-43s.jsonl",
+  "scene": "living_room",
+  "action": "lying",
+  "label_status": "candidate_pending_manual_confirmation",
+  "start_timestamp_ms": 1787131209975,
+  "end_timestamp_ms": 1787131232975,
+  "duration_s": 23,
+  "video_frame_count": 344,
+  "radar_record_count": 255,
+  "radar_track_frames": 255,
+  "radar_point_frames": 50,
+  "time_base": "UTC milliseconds from the recording computer system clock",
+  "note": "stable lying early window; chest_displacement_mm/ahi_index unavailable from current Industrial Visualizer export and kept null to match previous segments.; playback fps corrected to match real duration"
+}

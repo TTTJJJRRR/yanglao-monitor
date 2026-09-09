@@ -1,0 +1,20 @@
+{
+  "segment_id": "standing_up_02_49-58s",
+  "source_session": "session_20260816_145902",
+  "source_radar_directory": "08_16_2026_14_56_41",
+  "video_file": "standing_up_02_49-58s.mp4",
+  "radar_file": "standing_up_02_49-58s.jsonl",
+  "scene": "living_room",
+  "action": "standing_up",
+  "label_status": "candidate_pending_manual_confirmation",
+  "start_timestamp_ms": 1786863592018,
+  "end_timestamp_ms": 1786863601018,
+  "duration_s": 9,
+  "video_frame_count": 181,
+  "radar_record_count": 105,
+  "radar_track_frames": 105,
+  "radar_point_frames": 47,
+  "event_approx_s": 53.5,
+  "time_base": "UTC milliseconds from the recording computer system clock",
+  "note": "Clear sit-to-stand event with short sitting before and standing after."
+}

@@ -34,42 +34,43 @@ async def mock_stream() -> None:
     - replay：回放同学采集的 jsonl（成品体征 + 动作标签），仅广播不落库
       （诚实标注：非实时检测，仅供验证前端管道）。
     """
-    while True:
-        if get_source() == "replay":
-            for msg in next_replay_messages():
-                await broadcast(msg, source="replay")
-            # 以「now」刷新心跳，避免把回放的旧时间戳误判为设备离线
-            monitor.touch("replay", int(time.time() * 1000))
-            await monitor.publish_checks()
-            await asyncio.sleep(1)
-            continue
+    try:
+        while True:
+            if get_source() == "replay":
+                for msg in next_replay_messages():
+                    await broadcast(msg, source="replay")
+                # 以「now」刷新心跳，避免把回放的旧时间戳误判为设备离线
+                monitor.touch("replay", int(time.time() * 1000))
+                await monitor.publish_checks()
+                await asyncio.sleep(1)
+                continue
 
-        if get_source() == "mmfi":
-            for msg in next_mmfi_messages():
-                await broadcast(msg, source="mmfi")
-                monitor.touch("mmfi", msg["data"].get("timestamp_ms"))
-            await monitor.publish_checks()
-            await asyncio.sleep(1)
-            continue
+            if get_source() == "mmfi":
+                for msg in next_mmfi_messages():
+                    await broadcast(msg, source="mmfi")
+                    monitor.touch("mmfi", msg["data"].get("timestamp_ms"))
+                await monitor.publish_checks()
+                await asyncio.sleep(1)
+                continue
 
-        if get_source() == "real":
-            vital = next_real_vital()
-            if vital is not None:
-                db = SessionLocal()
-                try:
-                    record = VitalRecord(**vital)
-                    db.add(record)
-                    db.commit()
-                    db.refresh(record)
-                    await broadcast({"type": "vital", "data": {**vital, "id": record.id}}, source="real")
-                    monitor.touch("real", vital.get("timestamp_ms"))
-                finally:
-                    db.close()
-            await monitor.publish_checks()
-            await asyncio.sleep(1)
-            continue
+            if get_source() == "real":
+                vital = next_real_vital()
+                if vital is not None:
+                    db = SessionLocal()
+                    try:
+                        record = VitalRecord(**vital)
+                        db.add(record)
+                        db.commit()
+                        db.refresh(record)
+                        await broadcast({"type": "vital", "data": {**vital, "id": record.id}}, source="real")
+                        monitor.touch("real", vital.get("timestamp_ms"))
+                    finally:
+                        db.close()
+                await monitor.publish_checks()
+                await asyncio.sleep(1)
+                continue
 
-        db = SessionLocal()
+            db = SessionLocal()
         try:
             vital = generate_vital()
             vital_record = VitalRecord(**vital)
@@ -97,6 +98,11 @@ async def mock_stream() -> None:
             db.close()
         await monitor.publish_checks()
         await asyncio.sleep(1)
+    except asyncio.CancelledError:
+        # 生命周期关闭时 lifespan 会 task.cancel() 本协程；
+        # 循环体内每次迭代都已用 try/finally 关闭 db 会话，
+        # 此处仅吞掉取消信号、确保协程干净退出，不留半截事务。
+        pass
 
 
 @asynccontextmanager
